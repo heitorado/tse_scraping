@@ -12,7 +12,10 @@ class RosaSpider(scrapy.Spider):
     regexDict = {
         "process_number": r'([0-9-.]*[0-9-.])\d+',
         "municipio": r'([A-z]*.*[-]+)',
-        "uf": r'(\b[A-z]{2}\b)'
+        "uf": r'(\b[A-z]{2}\b)',
+        "protocol_number": r'(^[0-9]+)',
+        "date": r'(\d{1,2}\/\d{1,2}\/\d{4})',
+        "time": r'(\d{1,2}:\d{1,2})'
     }
     
     inc = 1
@@ -20,6 +23,7 @@ class RosaSpider(scrapy.Spider):
     numproc = ""
     municipio = ""
     uf = ""
+    protocolo = ""
 
     def parse(self, response):
         for processo in response.xpath("//table"):
@@ -41,7 +45,12 @@ class RosaSpider(scrapy.Spider):
                 yield {
                     'processo_num': self.numproc, #processo.xpath("//tr/td[1]/b/text()").get(),
                     'municipio': self.municipio,
-                    'uf': self.uf
+                    'uf': self.uf,
+                    'protocol': {
+                        'number': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
+                        'date': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
+                        'time': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
+                    }
                 }
             except TypeError as t:
                 print("error:")
@@ -58,6 +67,7 @@ def reset_attributes(self):
     self.numproc = ""
     self.municipio = ""
     self.uf = ""
+    self.protocolo = ""
 
 def get_corresponding_attribute(self, selector, current_element):
     if("PROCESSO" in selector):
@@ -66,12 +76,17 @@ def get_corresponding_attribute(self, selector, current_element):
         self.municipio = current_element.xpath(".//td/text()").getall()
         self.municipio = unidecode_all(self.municipio)
         self.municipio = remove_special_characters_all(self.municipio)
-        self.municipio = extract_string_from_list(self.municipio, self.regexDict["municipio"])
+        self.municipio = extract_matching_string_from_list(self.municipio, self.regexDict["municipio"])
     elif("UF" in selector):
         self.uf = current_element.xpath(".//td/text()").getall()
         self.uf = unidecode_all(self.uf)
         self.uf = remove_special_characters_all(self.uf)
-        self.uf = extract_string_from_list(self.uf, self.regexDict["uf"])
+        self.uf = extract_matching_string_from_list(self.uf, self.regexDict["uf"])
+    elif("PROTOCOLO" in selector):
+        self.protocolo = current_element.xpath(".//td/text()").getall()
+        self.protocolo = remove_special_characters_all(self.protocolo)
+        self.protocolo = remove_empty_strings(self.protocolo)
+
 
 
 def parse_text(text):
@@ -88,6 +103,9 @@ def unidecode_all(str_arr):
     
     return decoded_arr
 
+def remove_empty_strings(arr):
+    return [x for x in arr if x != ""]
+
 def remove_special_characters_all(str_arr):
     clean_arr = []
     for word in str_arr:
@@ -95,7 +113,7 @@ def remove_special_characters_all(str_arr):
     
     return clean_arr
 
-def extract_string_from_list(arr, regex):
+def extract_matching_string_from_list(arr, regex):
     str_matches = []
     regex = re.compile(regex)
     matches = [x for x in arr if regex.match(x)]
@@ -106,3 +124,12 @@ def extract_string_from_list(arr, regex):
             str_matches.append(",")
 
     return "".join(str_matches)
+
+def extract_literal_regex_only(text, regex):
+    if(isinstance(text, list)):
+        text = " ".join(text)
+
+    if(isinstance(text, str) and text == ""):
+        return ""
+    
+    return re.search(regex, text).group(0)
