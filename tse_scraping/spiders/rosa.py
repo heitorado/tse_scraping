@@ -49,40 +49,50 @@ class RosaSpider(scrapy.Spider):
                             get_corresponding_attribute(self, label, item)
                 except TypeError:
                     continue
-
-            yield {
-                'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
-                'municipio': extract_literal_regex_only(self.municipio, self.regexDict["municipio"]),
-                'uf': extract_literal_regex_only(self.municipio, self.regexDict["uf"]),
-                'protocolo': {
-                    'numero': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
-                    'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
-                    'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
-                },
-                'representantes': join_and_split_by_comma(self.representantes),
-                'representados': join_and_split_by_comma(self.representados),
-                'relator': extract_matching_string_from_list(self.relator, self.regexDict["anything"]),
-                'assunto': extract_literal_regex_only(self.assunto, self.regexDict["anything"]),
-                'localizacao': extract_literal_regex_only(self.localizacao, self.regexDict["anything"]),
-                'fase_atual': {
-                    'data_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["date"]),
-                    'hora_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["time"]),
-                    'comentario': parse_commentary(self),
+            if(self.protocolo is not ""):
+                yield {
+                    'identificacao': "todo",
+                    'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
+                    'processo_vinculado_num': "todo",
+                    'municipio': extract_literal_regex_only(self.municipio, self.regexDict["municipio"]),
+                    'uf': extract_literal_regex_only(self.municipio, self.regexDict["uf"]),
+                    'protocolo': {
+                        'numero': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
+                        'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
+                        'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
+                    },
+                    'partes': {
+                        'representantes': join_and_split_by_comma(self.representantes),
+                        'representados': join_and_split_by_comma(self.representados),
+                        # adicionar coisas
+                        'polos': {
+                            'polo_ativo': "todo",
+                            'polo_passivo': "todo"
+                        }
+                    },
+                    'relator': extract_matching_string_from_list(self.relator, self.regexDict["anything"]),
+                    'assunto': extract_literal_regex_only(self.assunto, self.regexDict["anything"]),
+                    'localizacao': extract_literal_regex_only(self.localizacao, self.regexDict["anything"]),
+                    'fase_atual': {
+                        'data_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["date"]),
+                        'hora_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["time"]),
+                        'comentario': parse_commentary(self),
+                    },
+                    'url': response.request.url
                 }
-            }
             # except TypeError as t:
             #     print("error:")
             #     print(t)
             #     continue
             
 
-        next_page_url = f'http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={self.test_prot_codes[self.inc]}&comboTribunal=tse'
+        next_page_url = f"http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={self.test_prot_codes[self.inc]}&comboTribunal=tse"
         self.inc += 1
         if next_page_url is not None:
             yield scrapy.Request(response.urljoin(next_page_url))
 
 def reset_attributes(self):
-    self.numproc = None
+    self.numproc = ""
     self.municipio = ""
     self.uf = ""
     self.protocolo = ""
