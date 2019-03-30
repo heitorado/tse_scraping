@@ -37,43 +37,43 @@ class RosaSpider(scrapy.Spider):
         for processo in response.xpath("//table"):
             reset_attributes(self)
 
-            try:
-                for item in processo.xpath("//tr"):
-                    print(item.xpath(".//td/b/text()").get())
-                    try:
-                        selector = item.xpath(".//td/b/text()").getall()
-                        for label in selector:
-                            label = parse_text(label)
+            # try:
+            for item in processo.xpath("//tr"):
+                print(item.xpath(".//td/b/text()").get())
+                try:
+                    selector = item.xpath(".//td/b/text()").getall()
+                    for label in selector:
+                        label = parse_text(label)
 
-                            if(label is not None):
-                                get_corresponding_attribute(self, label, item)
-                    except TypeError:
-                        continue
+                        if(label is not None):
+                            get_corresponding_attribute(self, label, item)
+                except TypeError:
+                    continue
 
-                yield {
-                    'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
-                    'municipio': self.municipio,
-                    'uf': self.uf,
-                    'protocolo': {
-                        'numero': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
-                        'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
-                        'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
-                    },
-                    'representantes': self.representantes,
-                    'representados': self.representados,
-                    'relator': self.relator,
-                    'assunto': extract_literal_regex_only(self.assunto, self.regexDict["anything"]),
-                    'localizacao': extract_literal_regex_only(self.localizacao, self.regexDict["anything"]),
-                    'fase_atual': {
-                        'data_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["date"]),
-                        'hora_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["time"]),
-                        'comentario': parse_commentary(self),
-                    }
+            yield {
+                'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
+                'municipio': self.municipio,
+                'uf': self.uf,
+                'protocolo': {
+                    'numero': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
+                    'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
+                    'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
+                },
+                'representantes': self.representantes,
+                'representados': self.representados,
+                'relator': self.relator,
+                'assunto': extract_literal_regex_only(self.assunto, self.regexDict["anything"]),
+                'localizacao': extract_literal_regex_only(self.localizacao, self.regexDict["anything"]),
+                'fase_atual': {
+                    'data_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["date"]),
+                    'hora_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["time"]),
+                    'comentario': parse_commentary(self),
                 }
-            except TypeError as t:
-                print("error:")
-                print(t)
-                continue
+            }
+            # except TypeError as t:
+            #     print("error:")
+            #     print(t)
+            #     continue
             
 
         next_page_url = f'http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={self.test_prot_codes[self.inc]}&comboTribunal=tse'
@@ -183,12 +183,12 @@ def extract_matching_string_from_list(arr, regex):
     return "".join(str_matches)
 
 def extract_literal_regex_only(text, regex):
+    if( (isinstance(text, str) and text == "") or (text is None)):
+        return ""
+    
     if(isinstance(text, list)):
         text = " ".join(text)
 
-    if(isinstance(text, str) and text == ""):
-        return ""
-    
     search_results = re.search(regex, text)
     if(search_results is not None):
         text = search_results.group(0)
