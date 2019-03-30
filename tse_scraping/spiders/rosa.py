@@ -66,7 +66,7 @@ class RosaSpider(scrapy.Spider):
                     'fase_atual': {
                         'data_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["date"]),
                         'hora_ultima_atualizacao': extract_literal_regex_only(self.fase_atual, self.regexDict["time"]),
-                        'comentario': extract_literal_regex_only(self.fase_atual, self.regexDict["anything"]),
+                        'comentario': parse_commentary(self),
                     }
                 }
             except TypeError as t:
@@ -186,3 +186,16 @@ def extract_literal_regex_only(text, regex):
         return ""
     
     return re.search(regex, text).group(0)
+
+def remove_first_regex_occurrence(text, regex):
+    text_to_remove = extract_literal_regex_only(text, regex)
+    return text.replace(text_to_remove,"",1)
+
+# Specific for separating date and time from the "Fase Atual" field
+def parse_commentary(self):
+    text_arr = self.fase_atual
+    commentary = extract_literal_regex_only(text_arr, self.regexDict["anything"])
+    commentary = remove_first_regex_occurrence(commentary, self.regexDict["time"])
+    commentary = remove_first_regex_occurrence(commentary, self.regexDict["date"])
+    return commentary.replace("-","").strip()
+
