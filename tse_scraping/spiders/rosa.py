@@ -112,7 +112,7 @@ def get_corresponding_attribute(self, selector, current_element):
         self.identificacao = unidecode_all(self.identificacao)
         self.identificacao = remove_special_characters_all(self.identificacao)
         self.identificacao = remove_empty_strings(self.identificacao)
-    elif("PROCESSO" in selector):
+    elif("PROCESSO" in selector and "VINCULADO" not in selector):
         self.numproc = current_element.xpath(".//td/text()").getall()
         self.numproc = unidecode_all(self.numproc)
         self.numproc = remove_special_characters_all(self.numproc)
