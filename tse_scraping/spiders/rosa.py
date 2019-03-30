@@ -59,9 +59,9 @@ class RosaSpider(scrapy.Spider):
                     'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
                     'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
                 },
-                'representantes': self.representantes,
-                'representados': self.representados,
-                'relator': self.relator,
+                'representantes': join_and_split_by_comma(self.representantes),
+                'representados': join_and_split_by_comma(self.representados),
+                'relator': extract_matching_string_from_list(self.relator, self.regexDict["anything"]),
                 'assunto': extract_literal_regex_only(self.assunto, self.regexDict["anything"]),
                 'localizacao': extract_literal_regex_only(self.localizacao, self.regexDict["anything"]),
                 'fase_atual': {
@@ -200,6 +200,10 @@ def extract_literal_regex_only(text, regex):
 def remove_first_regex_occurrence(text, regex):
     text_to_remove = extract_literal_regex_only(text, regex)
     return text.replace(text_to_remove,"",1)
+
+def join_and_split_by_comma(str_arr):
+    elements = "".join(str_arr)
+    return elements.split(",")
 
 # Specific for separating date and time from the "Fase Atual" field
 def parse_commentary(self):
