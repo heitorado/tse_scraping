@@ -12,7 +12,7 @@ class RosaSpider(scrapy.Spider):
     regexDict = {
         "process_number": r'([0-9-.]*[0-9-.])\d+',
         "municipio": r'(^[^-]*[^ -])',
-        "uf": r'(\b[A-z]{2}\b)',
+        "uf": r'(\b[A-Z]{2}\b$)',
         "protocol_number": r'(^[0-9]+)',
         "date": r'(\d{1,2}\/\d{1,2}\/\d{4})',
         "time": r'(\d{1,2}:\d{1,2})',
@@ -57,7 +57,7 @@ class RosaSpider(scrapy.Spider):
                     'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
                     'processo_vinculado_num': "todo",
                     'municipio': extract_literal_regex_only(self.municipio, self.regexDict["municipio"]),
-                    'uf': extract_literal_regex_only(self.municipio, self.regexDict["uf"]),
+                    'uf': self.uf,#extract_literal_regex_only(self.municipio, self.regexDict["uf"]),
                     'protocolo': {
                         'numero': extract_literal_regex_only(self.protocolo, self.regexDict["protocol_number"]),
                         'data': extract_literal_regex_only(self.protocolo, self.regexDict["date"]),
@@ -122,11 +122,11 @@ def get_corresponding_attribute(self, selector, current_element):
         self.municipio = unidecode_all(self.municipio)
         self.municipio = remove_special_characters_all(self.municipio)
         self.municipio = remove_empty_strings(self.municipio)
-    # elif("UF" in selector):
-    #     self.uf = current_element.xpath(".//td/text()").getall()
-    #     self.uf = unidecode_all(self.uf)
-    #     self.uf = remove_special_characters_all(self.uf)
-    #     self.uf = extract_matching_string_from_list(self.uf, self.regexDict["uf"])
+    elif("UF" in selector):
+        self.uf = current_element.xpath(".//td/text()").getall()
+        self.uf = unidecode_all(self.uf)
+        self.uf = remove_special_characters_all(self.uf)
+        self.uf = extract_matching_string_from_list(self.uf, self.regexDict["uf"])
     elif("PROTOCOLO" in selector):
         self.protocolo = current_element.xpath(".//td/text()").getall()
         self.protocolo = remove_special_characters_all(self.protocolo)
