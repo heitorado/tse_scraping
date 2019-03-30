@@ -51,7 +51,7 @@ class RosaSpider(scrapy.Spider):
                         continue
 
                 yield {
-                    'processo_num': self.numproc, #processo.xpath("//tr/td[1]/b/text()").get(),
+                    'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
                     'municipio': self.municipio,
                     'uf': self.uf,
                     'protocolo': {
@@ -95,7 +95,10 @@ def reset_attributes(self):
 
 def get_corresponding_attribute(self, selector, current_element):
     if("PROCESSO" in selector):
-        self.numproc = current_element.xpath(".//td/text()").re(self.regexDict["process_number"])[0]
+        self.numproc = current_element.xpath(".//td/text()").getall()
+        self.numproc = unidecode_all(self.numproc)
+        self.numproc = remove_special_characters_all(self.numproc)
+        self.numproc = remove_empty_strings(self.numproc)
     elif("MUNICIPIO" in selector):
         self.municipio = current_element.xpath(".//td/text()").getall()
         self.municipio = unidecode_all(self.municipio)
