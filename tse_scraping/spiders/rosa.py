@@ -186,7 +186,13 @@ def extract_literal_regex_only(text, regex):
     if(isinstance(text, str) and text == ""):
         return ""
     
-    return re.search(regex, text).group(0)
+    search_results = re.search(regex, text)
+    if(search_results is not None):
+        text = search_results.group(0)
+    else:
+        text = ""
+
+    return text
 
 def remove_first_regex_occurrence(text, regex):
     text_to_remove = extract_literal_regex_only(text, regex)
