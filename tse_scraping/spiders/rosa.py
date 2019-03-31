@@ -20,7 +20,10 @@ class RosaSpider(scrapy.Spider):
         "anything": r'(.+)'
     }
 
-    inc = 1
+    req_protocol_number = 1
+    req_protocol_number_limit = 60000
+    req_protocol_year = 2008
+    req_protocol_year_limit = 2019
 
     # Metadados do processo
     identificacao = ""
@@ -157,9 +160,12 @@ class RosaSpider(scrapy.Spider):
                 }
             
 
-        self.inc += 1
-        next_page_url = f"http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={self.inc}&comboTribunal=tse"
-        if((next_page_url is not None) and (self.inc is not 9999999999)):
+        self.req_protocol_number = (self.req_protocol_number + 1) % self.req_protocol_number_limit
+        if(self.req_protocol_number is 0):
+            self.req_protocol_year += 1
+        
+        next_page_url = f"http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={ str(self.req_protocol_number) + str(self.req_protocol_year) }&comboTribunal=tse"
+        if((next_page_url is not None) and (self.req_protocol_year is not self.req_protocol_year_limit)):
             yield scrapy.Request(response.urljoin(next_page_url))
 
 def reset_attributes(self):
