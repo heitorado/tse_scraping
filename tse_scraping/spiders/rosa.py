@@ -10,7 +10,7 @@ class RosaSpider(scrapy.Spider):
     start_urls = ['http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot=89242000&comboTribunal=tse']
 
     regexDict = {
-        "process_number": r'([0-9-.]*[0-9-.])\d+',
+        "process_number": r'(\d*-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})',
         "municipio": r'(^[^-]*[^ -])',
         "uf": r'(\b[A-Z]{2}\b$)',
         "protocol_number": r'(^[0-9]+)',
@@ -26,6 +26,7 @@ class RosaSpider(scrapy.Spider):
     # Metadados do processo
     identificacao = ""
     numproc = ""
+    numprocvinculado = ""
     municipio = ""
     uf = ""
     protocolo = ""
@@ -88,8 +89,8 @@ class RosaSpider(scrapy.Spider):
             if(self.protocolo is not ""):
                 yield {
                     'identificacao': extract_literal_regex_only(self.identificacao, self.regexDict["more_than_two"]),
-                    'processo_num': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]), #processo.xpath("//tr/td[1]/b/text()").get(),
-                    'processo_vinculado_num': "todo",
+                    'num_processo': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]),
+                    'num_processo_vinculado': extract_literal_regex_only(self.numprocvinculado, self.regexDict["process_number"]),
                     'municipio': extract_literal_regex_only(self.municipio, self.regexDict["municipio"]),
                     'uf': self.uf,
                     'protocolo': {
@@ -170,6 +171,7 @@ def reset_attributes(self):
     # Metadados do processo
     self.identificacao = ""
     self.numproc = ""
+    self.numprocvinculado = ""
     self.municipio = ""
     self.uf = ""
     self.protocolo = ""
@@ -224,6 +226,11 @@ def get_corresponding_attribute(self, selector, current_element):
         self.numproc = unidecode_all(self.numproc)
         self.numproc = remove_special_characters_all(self.numproc)
         self.numproc = remove_empty_strings(self.numproc)
+    elif("PROCESSO" in selector and "VINCULADO" in selector):
+        self.numprocvinculado = current_element.xpath(".//td/text()").getall()
+        self.numprocvinculado = unidecode_all(self.numprocvinculado)
+        self.numprocvinculado = remove_special_characters_all(self.numprocvinculado)
+        self.numprocvinculado = remove_empty_strings(self.numprocvinculado)
     elif("MUNICIPIO" in selector):
         self.municipio = current_element.xpath(".//td/text()").getall()
         self.municipio = unidecode_all(self.municipio)
