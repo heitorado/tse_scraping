@@ -88,7 +88,7 @@ class RosaSpider(scrapy.Spider):
                             get_corresponding_attribute(self, label, item)
                 except TypeError:
                     continue
-            if(self.protocolo is not ""):
+            if(self.protocolo != ""):
                 yield {
                     'identificacao': extract_literal_regex_only(self.identificacao, self.regexDict["more_than_two"]),
                     'num_processo': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]),
@@ -161,11 +161,11 @@ class RosaSpider(scrapy.Spider):
             
 
         self.req_protocol_number = (self.req_protocol_number + 1) % self.req_protocol_number_limit
-        if(self.req_protocol_number is 0):
+        if(self.req_protocol_number == 0):
             self.req_protocol_year += 1
         
         next_page_url = f"http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={ str(self.req_protocol_number) + str(self.req_protocol_year) }&comboTribunal=tse"
-        if((next_page_url is not None) and (self.req_protocol_year is not self.req_protocol_year_limit)):
+        if((next_page_url is not None) and (self.req_protocol_year != self.req_protocol_year_limit)):
             yield scrapy.Request(response.urljoin(next_page_url))
 
 def reset_attributes(self):
@@ -353,7 +353,7 @@ def get_corresponding_attribute(self, selector, current_element):
     # So we have to check SPECIFICALLY for the match, and we have the word REU for male subject and RE for female subject.
     # Considering the hypothetical case when the two subjects are mixed, we add a case for REU/RE and RE/REU (but these are theoretical, no examples found yet.)
     # All the other word matches are specific enough for not being misclassified.    
-    elif (('REU' is selector) or ('RE' is selector) or ('REU/RE' is selector) or ('RE/REU' is selector)):
+    elif (('REU' == selector) or ('RE' == selector) or ('REU/RE' == selector) or ('RE/REU' == selector)):
         self.reus.append(get_and_sanitize_string(current_element, self.reus))
         self.polo_passivo = self.reus
     
