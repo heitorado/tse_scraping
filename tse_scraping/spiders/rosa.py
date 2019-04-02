@@ -18,7 +18,8 @@ class RosaSpider(scrapy.Spider):
         "date": r'(\d{1,2}\/\d{1,2}\/\d{4})',
         "time": r'(\d{1,2}:\d{1,2})',
         "more_than_two": r'(\b\w{3}\w*\b)',            # For matching more than 2 characters. Useful for the "idenficacao" field.
-        "anything": r'(.+)'
+        "anything": r'(.+)',
+        "uf_initials_text_end": r'( *[A-z]*$)'
     }
 
     req_protocol_number = 1
@@ -91,7 +92,7 @@ class RosaSpider(scrapy.Spider):
                     continue
             if(self.protocolo != ""):
                 yield {
-                    'identificacao': extract_literal_regex_only(self.identificacao, self.regexDict["more_than_two"]),
+                    'identificacao': parse_identificacao(self),
                     'num_processo': extract_literal_regex_only(self.numproc, self.regexDict["process_number"]),
                     'num_processo_vinculado': extract_literal_regex_only(self.numprocvinculado, self.regexDict["process_number"]),
                     'municipio': extract_literal_regex_only(self.municipio, self.regexDict["municipio"]),
@@ -430,6 +431,12 @@ def remove_first_regex_occurrence(text, regex):
 def join_and_split_by_comma(str_arr):
     elements = "".join(str_arr)
     return elements.split(",")
+
+# 
+def parse_identificacao(self):
+    self.identificacao = extract_literal_regex_only(self.identificacao, self.regexDict["anything"])
+    self.identificacao = remove_first_regex_occurrence(self.identificacao, self.regexDict["uf_initials_text_end"])
+    return self.identificacao.replace("&ordm;", "um.") 
 
 # Specific for separating date and time from the "Fase Atual" field
 def parse_commentary(self):
