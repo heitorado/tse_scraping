@@ -348,7 +348,12 @@ def get_corresponding_attribute(self, selector, current_element):
     elif ('AUTOR' in selector):
         self.autores.append(get_and_sanitize_string(current_element, self.autores))
         self.polo_ativo = self.autores
-    elif ('RE' in selector):
+    # Special case - If we use ('RE' in selector) the spider gets much more prone to misclassifying data by getting wrong labels such as
+    # INTE[RE]SSADOS, COR[RE]GEDOR, et al
+    # So we have to check SPECIFICALLY for the match, and we have the word REU for male subject and RE for female subject.
+    # Considering the hypothetical case when the two subjects are mixed, we add a case for REU/RE and RE/REU (but these are theoretical, no examples found yet.)
+    # All the other word matches are specific enough for not being misclassified.    
+    elif (('REU' is selector) or ('RE' is selector) or ('REU/RE' is selector) or ('RE/REU' is selector)):
         self.reus.append(get_and_sanitize_string(current_element, self.reus))
         self.polo_passivo = self.reus
     
