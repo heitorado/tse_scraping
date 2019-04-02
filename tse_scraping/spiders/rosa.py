@@ -2,6 +2,7 @@
 import scrapy
 import unidecode
 import re
+import collections
 
 
 class RosaSpider(scrapy.Spider):
@@ -101,51 +102,51 @@ class RosaSpider(scrapy.Spider):
                         'hora': extract_literal_regex_only(self.protocolo, self.regexDict["time"])
                     },
                     'partes': {
-                        'representantes': self.representantes,
-                        'representados': self.representados,
+                        'representantes': list(flatten(self.representantes)),
+                        'representados': list(flatten(self.representados)),
 
-                        'apelantes': self.apelantes,
-                        'apelados': self.apelados,
+                        'apelantes': list(flatten(self.apelantes)),
+                        'apelados': list(flatten(self.apelados)),
 
-                        'agravantes': self.agravantes,
-                        'agravados': self.agravados,
+                        'agravantes': list(flatten(self.agravantes)),
+                        'agravados': list(flatten(self.agravados)),
 
-                        'recorrentes': self.recorrentes,
-                        'recorridos': self.recorridos,
+                        'recorrentes': list(flatten(self.recorrentes)),
+                        'recorridos': list(flatten(self.recorridos)),
 
-                        'embargantes': self.embargantes,
-                        'embargados': self.embargados,
+                        'embargantes': list(flatten(self.embargantes)),
+                        'embargados': list(flatten(self.embargados)),
 
-                        'impetrantes': self.impetrantes,
-                        'impetrados': self.impetrados,
+                        'impetrantes': list(flatten(self.impetrantes)),
+                        'impetrados': list(flatten(self.impetrados)),
 
-                        'requerentes': self.requerentes,
-                        'requeridos': self.requeridos,
+                        'requerentes': list(flatten(self.requerentes)),
+                        'requeridos': list(flatten(self.requeridos)),
 
-                        'reclamantes': self.reclamantes,
-                        'reclamados': self.reclamados,
+                        'reclamantes': list(flatten(self.reclamantes)),
+                        'reclamados': list(flatten(self.reclamados)),
 
-                        'exequentes': self.exequentes,
-                        'executados': self.executados,
+                        'exequentes': list(flatten(self.exequentes)),
+                        'executados': list(flatten(self.executados)),
 
-                        'demandantes': self.demandantes,
-                        'demandados': self.demandados,
+                        'demandantes': list(flatten(self.demandantes)),
+                        'demandados': list(flatten(self.demandados)),
 
-                        'denunciantes': self.denunciantes,
-                        'denunciados': self.denunciados,
+                        'denunciantes': list(flatten(self.denunciantes)),
+                        'denunciados': list(flatten(self.denunciados)),
 
-                        'excipientes': self.excipientes,
-                        'exceptos': self.exceptos,
+                        'excipientes': list(flatten(self.excipientes)),
+                        'exceptos': list(flatten(self.exceptos)),
 
-                        'querelantes': self.querelantes,
-                        'querelados': self.querelados,
+                        'querelantes': list(flatten(self.querelantes)),
+                        'querelados': list(flatten(self.querelados)),
 
-                        'autores': self.autores,
-                        'reus': self.reus,
+                        'autores': list(flatten(self.autores)),
+                        'reus': list(flatten(self.reus)),
 
                         'polos': {
-                            'polo_ativo': self.polo_ativo,
-                            'polo_passivo': self.polo_passivo
+                            'polo_ativo': list(flatten(self.polo_ativo)),
+                            'polo_passivo': list(flatten(self.polo_passivo))
                         }
                     },
                     'relator': extract_matching_string_from_list(self.relator, self.regexDict["anything"]),
@@ -438,3 +439,9 @@ def parse_commentary(self):
     commentary = remove_first_regex_occurrence(commentary, self.regexDict["date"])
     return commentary.replace("-","").strip()
 
+def flatten(irregular_list):
+    for elem in irregular_list:
+        if isinstance(elem, collections.Iterable) and not isinstance(elem, (str, bytes)):
+            yield from flatten(elem)
+        else:
+            yield elem
