@@ -181,6 +181,8 @@ file = File.read("./scraped_items_rosa.json")
 
 data_hash = JSON.parse(file)
 
+dict_hash = Hash.new
+
 parts_list = []
 
 c_counter = 0
@@ -216,7 +218,10 @@ parts_list.uniq.sort.each do |part|
     end
 
     puts "\"#{part}\",#{id}"
+
+    dict_hash[part] = id
 end
 
-
-puts c_counter
+File.open("parts_ids.json","w") do |f|
+    f.write(dict_hash.to_json)
+end
