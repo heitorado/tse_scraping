@@ -13,33 +13,46 @@ class PartsClassifier
         @dict_hash = Hash.new
         @parts_list = []
     end
-
+    
     def classify_parts
-        # Here we will get the UNIQUE values of both poles and save in a file for later classification
+        # Here we will get the values of both poles and put in the @parts_list array
         @data_hash.each do |data|
             data['partes']['polos']['polo_ativo'].each do |pa|
                 @parts_list << sanitize(pa)
             end
-
+            
             data['partes']['polos']['polo_passivo'].each do |pp|
                 @parts_list << sanitize(pp)
             end
         end
 
+        # Then we filter the unique results and sort it alphabetically.
+        # After that, we iterate through each item to search for our predefined matches (method 'classify')
+        # that will yield us an identifier for that data. This allows us to generalize strings that have the same meaning.
         @parts_list.uniq.sort.each do |part|
 
             word_splitted_part = part.scan(/\w*/)
+
+            # The classify() method classifies parties by their initials, which are unique.
             id = classify(word_splitted_part)
 
+            # If the first call to 'classify' was unsucessful (That is, yielded the code 99 - meaning it is a physical or juridical person)
+            # it may be wrong (maybe it was the party's full name) So we need to run a second filter, that instead of
+            # searching for the initials, it will search by the full name of the party.
             if(id == 99)
                 id = classify_by_full_name(part)
             end
 
+            # And still, it is possible that we are iterating throug a party that doesn't exist anymore, but it can't be classified as a person.
+            # then we run a third filter, checking if the data hasn't got the tile "PARTIDO" (party).
             if(id == 99)
                 id = search_for_missing_parties(part)
             end
 
+            # After these filters, we have the data property classified and output it in a csv-friendly format:
             puts "\"#{part}\",#{id}"
+
+            # After printing, we also include the classification id on our @dict_hash, that will allow us to save the classification as JSON later.
             @dict_hash[part] = id
         end
     end
