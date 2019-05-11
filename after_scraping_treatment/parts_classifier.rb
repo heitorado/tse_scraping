@@ -18,11 +18,11 @@ class PartsClassifier
         # Here we will get the values of both poles and put in the @parts_list array
         @data_hash.each do |data|
             data['partes']['polos']['polo_ativo'].each do |pa|
-                @parts_list << sanitize(pa)
+                @parts_list << sanitize_part(pa)
             end
             
             data['partes']['polos']['polo_passivo'].each do |pp|
-                @parts_list << sanitize(pp)
+                @parts_list << sanitize_part(pp)
             end
         end
 
