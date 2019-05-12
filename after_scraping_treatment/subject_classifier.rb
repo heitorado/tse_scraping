@@ -38,6 +38,12 @@ class SubjectClassifier
         end
     end
 
+    def save_dictionary_as_json(file_name)
+        File.open("#{file_name}.json","w") do |f|
+            f.write(@dict_hash.to_json)
+        end
+    end
+
     def classify(str)
         subjects_arr = []
         if(str.include? "ABUSO")
