@@ -10,4 +10,12 @@ module HelperMethods
     def headers(arr)
         return arr
     end
+
+    def binary(stmt)
+        return stmt ? '1' : '0'
+    end
+
+    def na_or_content(str)
+        return str.gsub(",","").gsub(" ","").empty? ? "N/A" : "#{str}"
+    end
 end
