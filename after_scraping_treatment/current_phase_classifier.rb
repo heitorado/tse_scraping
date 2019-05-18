@@ -40,29 +40,33 @@ class CurrentPhaseClassifier
     end
 
     def classify(str)
-        if(str.include? "EXPEDID") 
-            # Expedido/Expedida
-            return 1
-        elsif(str.include? "APENSAD") 
-            # Apensado/Apensada
-            return 2
+        parts_arr = []
+
+        if(str.include? "TRANSIT")
+            # Transitado/Transitada (em julgado)
+            parts_arr << 1
         elsif(str.include? "ARQUIV") 
             # Arquivado/Arquivada
-            return 3
+            parts_arr << 2
         elsif(str.include? "CANCELAD") 
             # Cancelado/Cancelada
-            return 4
+            parts_arr << 3
         elsif(str.include? "DECIS") 
             # Decisão
-            return 5
-        elsif(str.include? "TRANSIT") 
-            # Transitado/Transitada (em julgado)
-            return 6
+            parts_arr << 4
+        elsif(str.include? "APENSAD") 
+            # Apensado/Apensada
+            parts_arr << 5
+        elsif(str.include? "EXPEDID") 
+            # Expedido/Expedida
+            parts_arr << 6
         elsif(str.include? "EXPEDIC") 
             # Solicitação de Expedição
-            return 7
+            parts_arr << 7
         else
-            return 0
+            parts_arr << 0
         end
+
+        return parts_arr
     end
 end
