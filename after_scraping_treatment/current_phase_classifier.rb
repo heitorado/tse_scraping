@@ -12,7 +12,7 @@ class CurrentPhaseClassifier
         @phase_list = []
     end
 
-    def classify_subjects
+    def classify_phases
         
         @data_hash.each do |data|
             @phase_list << sanitize_phase(data['fase_atual']['comentario'])
