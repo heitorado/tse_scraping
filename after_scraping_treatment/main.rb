@@ -4,6 +4,7 @@ require 'csv'
 
 require_relative "parts_classifier"
 require_relative "subject_classifier"
+require_relative "current_phase_classifier"
 require_relative "helper_methods"
 
 include HelperMethods
@@ -23,6 +24,12 @@ def generate_subjects_dictionary
     sc.save_dictionary_as_json("subjects_dict")
 end
 
+def generate_phases_dictionary
+    cpc = CurrentPhaseClassifier.new("../scraped_items_rosa.json")
+    cpc.classify_phases
+    cpc.save_dictionary_as_json("phases_dict")
+end
+
 # Generates the main JSON for our analysis, given all the dictionaries created for the data.
 def generate_processed_json
     file = File.read("../scraped_items_rosa.json")
@@ -34,6 +41,8 @@ def generate_processed_json
     subjects_dict = File.read("./subjects_dict.json")
     subject_ids = JSON.parse(subjects_dict)
 
+    phases_dict = File.read("./phases_dict.json")
+    phase_ids = JSON.parse(phases_dict)
 
     data_hash.each do |data|
         active_pole = data['partes']['polos']['polo_ativo'].map { |pa| pa = part_ids[sanitize_part(pa)] }
@@ -44,6 +53,9 @@ def generate_processed_json
 
         subjects = subject_ids[sanitize_subject(data['assunto'])]
         data['assunto_ids'] = subjects.dup
+
+        phases = phase_ids[sanitize_phase(data['fase_atual']['comentario'])]
+        data['fase_atual']['comentario_ids'] = phases.dup
     end
     
     File.open("classified_scraped_items_rosa.json","w") do |f|
@@ -67,7 +79,10 @@ def generate_processed_csv
                         "assunto_registro_de_candidatura", "assunto_conduta_vedada", "assunto_gasto ilicito", 
                         "assunto_informacao", "assunto_pedido", "assunto_recurso", "assunto_propaganda", 
                         "assunto_solicitacao", "assunto_outro", "localizacao", "fase_atual_ultima_atualizacao_data", 
-                        "fase_atual_ultima_atualizacao_hora", "fase_atual_comentario", "url"])
+                        "fase_atual_ultima_atualizacao_hora", "fase_atual_comentario", 
+                        "fase_atual_comentario_expedido", "fase_atual_comentario_apensado", "fase_atual_comentario_arquivado",
+                        "fase_atual_comentario_cancelado", "fase_atual_comentario_decisao", "fase_atual_comentario_transitado", 
+                        "fase_atual_comentario_expedicao", "fase_atual_comentario_outro", "url"])
 
         
         classified_data_hash.each do |process|
@@ -134,9 +149,29 @@ def generate_processed_csv
             fase_atual_ultima_atualizacao_data = na_or_content process['fase_atual']['data_ultima_atualizacao']
             fase_atual_ultima_atualizacao_hora = na_or_content process['fase_atual']['hora_ultima_atualizacao']
             fase_atual_comentario = na_or_content process['fase_atual']['comentario']
+            fase_atual_comentario_expedido = binary (process['fase_atual']['comentario_ids'] & [1]).any?
+            fase_atual_comentario_apensado = binary (process['fase_atual']['comentario_ids'] & [2]).any?
+            fase_atual_comentario_arquivado = binary (process['fase_atual']['comentario_ids'] & [3]).any?
+            fase_atual_comentario_cancelado = binary (process['fase_atual']['comentario_ids'] & [4]).any?
+            fase_atual_comentario_decisao = binary (process['fase_atual']['comentario_ids'] & [5]).any?
+            fase_atual_comentario_transitado = binary (process['fase_atual']['comentario_ids'] & [6]).any?
+            fase_atual_comentario_expedicao = binary (process['fase_atual']['comentario_ids'] & [7]).any?
+            fase_atual_comentario_outro = binary (process['fase_atual']['comentario_ids'] & [0]).any?
             url = na_or_content process['url']
 
-            csv << [identificacao, num_processo, num_processo_vinculado, municipio, uf, prot_num, prot_data, prot_hora, representantes,representados,apelantes,apelados,agravantes,agravados,recorrentes,recorridos,embargantes,embargados,impetrantes,impetrados,requerentes,requeridos,reclamantes,reclamados,exequentes,executados,demandantes,demandados,denunciantes,denunciados,excipientes,exceptos,querelantes,querelados,autores,reus, polo_ativo_pf, polo_ativo_entpubl, polo_ativo_partido, polo_ativo_colig, polo_passivo_pf, polo_passivo_entpubl, polo_passivo_partido, polo_passivo_colig, relator, assunto, assunto_abuso, assunto_captacao_ilicita_de_sufragio, assunto_fraude, assunto_contas, assunto_registro_de_candidatura, assunto_conduta_vedada, assunto_gasto_ilicito, assunto_informacao, assunto_pedido, assunto_recurso, assunto_propaganda, assunto_solicitacao, assunto_outro, localizacao, fase_atual_ultima_atualizacao_data, fase_atual_ultima_atualizacao_hora, fase_atual_comentario, url]        
+            csv << [identificacao, num_processo, num_processo_vinculado, municipio, uf, prot_num, prot_data, 
+                    prot_hora, representantes,representados,apelantes,apelados,agravantes,agravados,recorrentes,
+                    recorridos,embargantes,embargados,impetrantes,impetrados,requerentes,requeridos,reclamantes,
+                    reclamados,exequentes,executados,demandantes,demandados,denunciantes,denunciados,excipientes,
+                    exceptos,querelantes,querelados,autores,reus, polo_ativo_pf, polo_ativo_entpubl, polo_ativo_partido, 
+                    polo_ativo_colig, polo_passivo_pf, polo_passivo_entpubl, polo_passivo_partido, polo_passivo_colig, 
+                    relator, assunto, assunto_abuso, assunto_captacao_ilicita_de_sufragio, assunto_fraude, assunto_contas, 
+                    assunto_registro_de_candidatura, assunto_conduta_vedada, assunto_gasto_ilicito, assunto_informacao, 
+                    assunto_pedido, assunto_recurso, assunto_propaganda, assunto_solicitacao, assunto_outro, localizacao, 
+                    fase_atual_ultima_atualizacao_data, fase_atual_ultima_atualizacao_hora, fase_atual_comentario,
+                    fase_atual_comentario_expedido, fase_atual_comentario_apensado, fase_atual_comentario_arquivado,
+                    fase_atual_comentario_cancelado, fase_atual_comentario_decisao, fase_atual_comentario_transitado, 
+                    fase_atual_comentario_expedicao, fase_atual_comentario_outro, url]        
         end
     end
 end
@@ -144,5 +179,6 @@ end
 
 generate_parts_dictionary()
 generate_subjects_dictionary()
+generate_phases_dictionary()
 generate_processed_json()
 generate_processed_csv()
