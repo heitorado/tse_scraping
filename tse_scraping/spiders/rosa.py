@@ -6,10 +6,16 @@ import collections
 
 
 class RosaSpider(scrapy.Spider):
+    # Initial Spider Configuration. We set its name, the allowed domains for it to crawl and the first URL to be used.
+    # We are currently setting the starting url to an invalid one (no process has protocol number '1'), but on subsequent
+    # requests we change the protocol number dynamically.
     name = 'rosa'
     allowed_domains = ['inter03.tse.jus.br']
     start_urls = ['http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot=1&comboTribunal=tse']
 
+    # Here we have our regexes for each labeled data. Each one is crafted with the specific purpose of matching the shape (not always, but
+    # I've tried to be as generic as possible, that is, to cover the most cases) of the
+    # string that is stored under that label
     regexDict = {
         "process_number": r'(\d*-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})',
         "municipio": r'(^[^-]*[^ -])',
@@ -22,12 +28,21 @@ class RosaSpider(scrapy.Spider):
         "uf_initials_text_end": r'( *[A-z]*$)'
     }
 
+    # Here we have some hardcoded parameters. The thing is, protocols on the TSE website follow this pattern:
+    # {number}{year}, for example 12008, 22008, 32008 represents the three first data that received a protocol number at the year 2008.
+    # 
+    # We will limit the {number} to grow until it reaches 60000, since we empirically tested that there are no more that 60000
+    # data inserted each year on the TSE website. 
+    # 
+    # In short, we will search each year starting from 1, like:
+    # 12008, 22008, 32008 ... until we reach 600002008. Then we go forward to next year and start from 1 again.
+    # We will get data from 2008 (inclusive) to 2019 (exclusive)
     req_protocol_number = 1
     req_protocol_number_limit = 60000
     req_protocol_year = 2008
     req_protocol_year_limit = 2019
 
-    # Metadados do processo
+    # Process metadata - These are data that identifies or talk about the process in some manner. Where it was created, who started it, etc.
     identificacao = ""
     numproc = ""
     numprocvinculado = ""
@@ -42,7 +57,7 @@ class RosaSpider(scrapy.Spider):
     fase_atual = ""
     
 
-    # Possíveis nomes das Partes do Processo
+    # Possible parts names in the process - That is, the titles the active and passive poles can take in an electoral dispute.
     apelantes = []
     apelados = []
     agravantes = []
@@ -70,17 +85,16 @@ class RosaSpider(scrapy.Spider):
     autores = []
     reus = []
 
-    # Generalização das partes, separando em polo ativo ou passivo
+    # Here we will generalize the parts independent of its title, just saying if its on the passive or active pole of the process.
     polo_ativo = []
     polo_passivo = []
 
+    # Main Rosa method.
     def parse(self, response):
         for processo in response.xpath("//table"):
             reset_attributes(self)
 
-            # try:
             for item in processo.xpath("//tr"):
-                #print(item.xpath(".//td/b/text()").get())
                 try:
                     selector = item.xpath(".//td/b/text()").getall()
                     for label in selector:
@@ -161,17 +175,23 @@ class RosaSpider(scrapy.Spider):
                     'url': response.request.url
                 }
             
-
+        # Crawling logic:
+        # We increment the number that precedes the year by one but don't let it above the threshold we set earlier.
+        # If it reaches the threshold, it will be set to 0 and then the year will be incremented by one,
+        # sucessfully restarting the cycle.
         self.req_protocol_number = (self.req_protocol_number + 1) % self.req_protocol_number_limit
         if(self.req_protocol_number == 0):
             self.req_protocol_year += 1
         
+        # Our next page will always be the number + year, that we get from the previous crawling logic operation.
         next_page_url = f"http://inter03.tse.jus.br/sadpPush/ExibirDadosProcesso.do?nprot={ str(self.req_protocol_number) + str(self.req_protocol_year) }&comboTribunal=tse"
+        
+        # But if our next page is a None object or if the protocol year is equal to the year limit we set earlier, the scraping stops.
         if((next_page_url is not None) and (self.req_protocol_year != self.req_protocol_year_limit)):
             yield scrapy.Request(response.urljoin(next_page_url))
 
 def reset_attributes(self):
-    # Metadados do processo
+    # Process metadata
     self.identificacao = ""
     self.numproc = ""
     self.numprocvinculado = ""
@@ -183,7 +203,7 @@ def reset_attributes(self):
     self.localizacao = "" 
     self.fase_atual = ""
 
-    # Possíveis nomes das partes do processo
+    # Possible parts names in the process
     self.representantes = [] 
     self.representados = []
     self.apelantes = []
@@ -213,12 +233,12 @@ def reset_attributes(self):
     self.autores = []
     self.reus = []
 
-    # Generalização das partes
+    # Parts generalization
     self.polo_ativo = []
     self.polo_passivo = []
 
 def get_corresponding_attribute(self, selector, current_element):
-    # Identificadores dos metadados do processo
+    # Here we will scrape the variables corresponding to the process metadata.
     if("IDENTIFICACAO" in selector):
         self.identificacao = current_element.xpath(".//td/text()").getall()
         self.identificacao = unidecode_all(self.identificacao)
@@ -268,7 +288,8 @@ def get_corresponding_attribute(self, selector, current_element):
         self.fase_atual = unidecode_all(self.fase_atual)
         self.fase_atual = remove_special_characters_all(self.fase_atual)
         self.fase_atual = remove_empty_strings(self.fase_atual)
-    # Inicio da verificação das partes do processo
+
+    # Now we scrape the process parts
     elif("REPRESENTANT" in selector):
         self.representantes.append(get_and_sanitize_string(current_element, self.representantes))
         self.polo_ativo = self.representantes
